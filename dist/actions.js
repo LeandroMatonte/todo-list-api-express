@@ -1,4 +1,15 @@
 "use strict";
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -36,12 +47,13 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 exports.__esModule = true;
-exports.getUsers = exports.createUser = void 0;
+exports.deleteUser = exports.updateTodo = exports.createTodo = exports.getTodo = exports.getUsers = exports.createUser = void 0;
 var typeorm_1 = require("typeorm"); // getRepository"  traer una tabla de la base de datos asociada al objeto
-var Users_1 = require("./entities/Users");
+var User_1 = require("./entities/User");
 var utils_1 = require("./utils");
+var Todo_1 = require("./entities/Todo");
 var createUser = function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var userRepo, user, newUser, results;
+    var userRepo, user, todoDefault, newtodo, newUser, results;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -54,14 +66,16 @@ var createUser = function (req, res) { return __awaiter(void 0, void 0, void 0, 
                     throw new utils_1.Exception("Please provide an email");
                 if (!req.body.password)
                     throw new utils_1.Exception("Please provide a password");
-                userRepo = typeorm_1.getRepository(Users_1.Users);
+                userRepo = typeorm_1.getRepository(User_1.User);
                 return [4 /*yield*/, userRepo.findOne({ where: { email: req.body.email } })];
             case 1:
                 user = _a.sent();
                 if (user)
                     throw new utils_1.Exception("Users already exists with this email");
-                newUser = typeorm_1.getRepository(Users_1.Users).create(req.body);
-                return [4 /*yield*/, typeorm_1.getRepository(Users_1.Users).save(newUser)];
+                todoDefault = { label: "Ejemplo", done: false };
+                newtodo = typeorm_1.getRepository(Todo_1.Todo).create(todoDefault);
+                newUser = typeorm_1.getRepository(User_1.User).create(__assign(__assign({}, req.body), { todos: [newtodo] }));
+                return [4 /*yield*/, typeorm_1.getRepository(User_1.User).save(newUser)];
             case 2:
                 results = _a.sent();
                 return [2 /*return*/, res.json(results)];
@@ -73,7 +87,7 @@ var getUsers = function (req, res) { return __awaiter(void 0, void 0, void 0, fu
     var users;
     return __generator(this, function (_a) {
         switch (_a.label) {
-            case 0: return [4 /*yield*/, typeorm_1.getRepository(Users_1.Users).find()];
+            case 0: return [4 /*yield*/, typeorm_1.getRepository(User_1.User).find({ relations: ["todos"] })];
             case 1:
                 users = _a.sent();
                 return [2 /*return*/, res.json(users)];
@@ -81,3 +95,89 @@ var getUsers = function (req, res) { return __awaiter(void 0, void 0, void 0, fu
     });
 }); };
 exports.getUsers = getUsers;
+var getTodo = function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var userRepo, userActual;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                userRepo = typeorm_1.getRepository(User_1.User);
+                return [4 /*yield*/, userRepo.findOne({ relations: ["todos"], where: { id: req.params.id } })];
+            case 1:
+                userActual = _a.sent();
+                if (!userActual)
+                    throw new utils_1.Exception("User not found");
+                return [2 /*return*/, res.json(userActual.todos)];
+        }
+    });
+}); };
+exports.getTodo = getTodo;
+var createTodo = function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var userRepo, user, newtodo;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                userRepo = typeorm_1.getRepository(User_1.User);
+                return [4 /*yield*/, userRepo.findOne({ relations: ["todos"], where: { id: req.params.id } })];
+            case 1:
+                user = _a.sent();
+                //verificacion de existencia de usuario
+                if (!user)
+                    throw new utils_1.Exception("User not found");
+                //verificar que no venga una tarea vacia
+                if (!req.body.label)
+                    throw new utils_1.Exception("You need to specify the label");
+                if (req.body.done == undefined)
+                    throw new utils_1.Exception("Specify if the todo is done or not");
+                newtodo = typeorm_1.getRepository(Todo_1.Todo).create({ label: req.body.label, done: req.body.done });
+                user.todos.push(newtodo);
+                return [4 /*yield*/, userRepo.save(user)];
+            case 2:
+                _a.sent();
+                return [2 /*return*/, res.json(user.todos)];
+        }
+    });
+}); };
+exports.createTodo = createTodo;
+var updateTodo = function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var todoRepo, todo;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                todoRepo = typeorm_1.getRepository(Todo_1.Todo);
+                return [4 /*yield*/, todoRepo.findOne({ where: { id: req.params.id } })];
+            case 1:
+                todo = _a.sent();
+                if (!todo)
+                    throw new utils_1.Exception("Todo not found");
+                //Verificar que no falte la propiedad "label" o "done"
+                if (req.body.label == undefined || !req.body.label)
+                    throw new utils_1.Exception("The new todo is missing label or done property");
+                todo.label = req.body.label;
+                todo.done = req.body.done;
+                return [4 /*yield*/, todoRepo.save(todo)];
+            case 2:
+                _a.sent();
+                return [2 /*return*/, res.json(todo)];
+        }
+    });
+}); };
+exports.updateTodo = updateTodo;
+var deleteUser = function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var userRepo, userToRemove;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                userRepo = typeorm_1.getRepository(User_1.User);
+                return [4 /*yield*/, userRepo.findOne(req.params.id)];
+            case 1:
+                userToRemove = _a.sent();
+                if (!userToRemove)
+                    throw new utils_1.Exception("User not found");
+                return [4 /*yield*/, userRepo.remove(userToRemove)];
+            case 2:
+                _a.sent();
+                return [2 /*return*/, res.json(userToRemove)];
+        }
+    });
+}); };
+exports.deleteUser = deleteUser;

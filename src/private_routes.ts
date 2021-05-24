@@ -20,4 +20,16 @@ const router = Router();
 
 router.get('/user', safe(actions.getUsers));
 
+//Obtener la lista de todos de un usuario en especifico
+router.get('/todos/user/:id', safe(actions.getTodo));
+
+//agregar un todo nuevo a la lista de todos del usuario
+router.post('/todos/user/:id', safe(actions.createTodo));
+
+//actualiza un todo
+router.put('/todos/user/:id', safe(actions.updateTodo));
+
+//borrar usuario y sus todos
+router.delete('/todos/user/:id', safe(actions.deleteUser));
+
 export default router;

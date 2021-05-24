@@ -37,4 +37,12 @@ var actions = __importStar(require("./actions"));
 // declare a new router to include all the endpoints
 var router = express_1.Router();
 router.get('/user', utils_1.safe(actions.getUsers));
+//Obtener la lista de todos de un usuario en especifico
+router.get('/todos/user/:id', utils_1.safe(actions.getTodo));
+//agregar un todo nuevo a la lista de todos del usuario
+router.post('/todos/user/:id', utils_1.safe(actions.createTodo));
+//actualiza un todo
+router.put('/todos/user/:id', utils_1.safe(actions.updateTodo));
+//borrar usuario y sus todos
+router["delete"]('/todos/user/:id', utils_1.safe(actions.deleteUser));
 exports["default"] = router;
